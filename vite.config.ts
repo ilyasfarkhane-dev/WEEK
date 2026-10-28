@@ -5,7 +5,16 @@ import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 
 const browser = path.resolve(__dirname, "src/browser");
-const storeFile = path.resolve(__dirname, "data/store.json");
+const storeCandidates = [path.resolve(__dirname, "data/store.json"), path.resolve(__dirname, "public/store.json")];
+
+function publishedStore() {
+  for (const file of storeCandidates) {
+    if (!existsSync(file)) continue;
+    const source = readFileSync(file);
+    if (source.includes("ada.mensah@demo.gic.local")) return source;
+  }
+  return null;
+}
 
 function jsonDatabase(): Plugin {
   return {
@@ -13,18 +22,20 @@ function jsonDatabase(): Plugin {
     configureServer(server) {
       server.middlewares.use((request, response, next) => {
         if (request.url?.split("?")[0] !== "/store.json") return next();
-        if (!existsSync(storeFile)) {
+        const source = publishedStore();
+        if (!source) {
           response.statusCode = 404;
           response.end("{}");
           return;
         }
         response.setHeader("Content-Type", "application/json");
-        response.end(readFileSync(storeFile));
+        response.end(source);
       });
     },
     generateBundle() {
-      if (!existsSync(storeFile)) return;
-      this.emitFile({ type: "asset", fileName: "store.json", source: readFileSync(storeFile) });
+      const source = publishedStore();
+      if (!source) return;
+      this.emitFile({ type: "asset", fileName: "store.json", source });
     },
   };
 }

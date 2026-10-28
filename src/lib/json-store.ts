@@ -1,5 +1,5 @@
 import { randomBytes } from "node:crypto";
-import { copyFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 
 type Row = Record<string, unknown>;
@@ -45,11 +45,7 @@ type Where = Record<string, unknown>;
 function storePath() {
   if (typeof window !== "undefined") return "data/store.json";
   if (process.env.DATA_FILE) return process.env.DATA_FILE;
-  const bundled = path.join(process.cwd(), "data", "store.json");
-  if (!process.env.AWS_EXECUTION_ENV) return bundled;
-  const runtime = "/tmp/gic-store.json";
-  if (!existsSync(runtime) && existsSync(bundled)) copyFileSync(bundled, runtime);
-  return existsSync(runtime) ? runtime : bundled;
+  return path.join(process.cwd(), "data", "store.json");
 }
 
 function camel(name: string) {

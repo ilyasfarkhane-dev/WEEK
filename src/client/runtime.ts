@@ -5,20 +5,24 @@ const STORE_KEY = "gic.store";
 
 let opening: Promise<void> | null = null;
 
-function savedStore() {
-  const saved = window.localStorage.getItem(STORE_KEY);
-  if (!saved || !saved.trim().startsWith("{")) return null;
-  return saved;
+function userCount(value: string | null) {
+  if (!value) return 0;
+  try {
+    const parsed = JSON.parse(value) as { User?: unknown[] };
+    return Array.isArray(parsed.User) ? parsed.User.length : 0;
+  } catch {
+    return 0;
+  }
 }
 
 function openDatabase() {
   if (!opening) {
     opening = (async () => {
-      if (savedStore()) return;
+      if (userCount(window.localStorage.getItem(STORE_KEY)) > 0) return;
       const response = await fetch("/store.json");
       const text = await response.text();
-      if (!response.ok || !text.trim().startsWith("{")) throw new Error("The JSON records could not be loaded.");
-      if (!savedStore()) window.localStorage.setItem(STORE_KEY, text);
+      if (!response.ok || userCount(text) === 0) throw new Error("The JSON records could not be loaded.");
+      window.localStorage.setItem(STORE_KEY, text);
     })();
   }
   return opening;
