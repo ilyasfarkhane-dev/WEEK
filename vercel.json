@@ -1,0 +1,14 @@
+{
+  "framework": null,
+  "buildCommand": "prisma generate && vite build && ALLOW_DEMO_SEED=true tsx prisma/seed.ts",
+  "outputDirectory": "dist",
+  "rewrites": [
+    { "source": "/((?!api/).*)", "destination": "/index.html" }
+  ],
+  "functions": {
+    "api/**/*.ts": {
+      "includeFiles": "{data/store.json,prisma/schema.prisma}",
+      "maxDuration": 30
+    }
+  }
+}

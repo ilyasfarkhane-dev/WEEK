@@ -1,8 +1,6 @@
 import "dotenv/config";
 import { createReadStream } from "node:fs";
-import { readFile } from "node:fs/promises";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
 import express, { type Request, type Response } from "express";
 import busboy from "busboy";
 import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
@@ -30,10 +28,6 @@ import { RedirectSignal } from "@/server/result";
 import { clearSession } from "@/server/session";
 import { loadView } from "@/server/views";
 import { sessionPayload } from "@/server/session-payload";
-
-const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const dev = process.env.NODE_ENV !== "production";
-const port = Number(process.env.PORT || 3000);
 
 const actions: Record<string, (input: unknown) => Promise<unknown>> = {
   login: (input) => loginAction(input as { email: string; password: string }),
@@ -131,7 +125,7 @@ function handleError(response: Response, error: unknown, cookies: string[]) {
   response.status(500).json({ ok: false, message: "The request could not be completed." });
 }
 
-const app = express();
+export const app = express();
 app.disable("x-powered-by");
 app.use((_request, response, next) => {
   response.setHeader("X-Frame-Options", "DENY");
@@ -443,21 +437,3 @@ function wrap(value: string, width: number) {
   return lines.length ? lines : [""];
 }
 
-async function start() {
-  if (dev) {
-    const { createServer: createVite } = await import("vite");
-    const vite = await createVite({ root, server: { middlewareMode: true }, appType: "spa" });
-    app.use(vite.middlewares);
-  } else {
-    const dist = path.join(root, "dist");
-    app.use(express.static(dist));
-    app.get(/^(?!\/api\/).*/, async (_request, response) => {
-      response.type("html").send(await readFile(path.join(dist, "index.html"), "utf8"));
-    });
-  }
-  app.listen(port, "127.0.0.1", () => {
-    console.log(`GIC listening on http://127.0.0.1:${port}`);
-  });
-}
-
-void start();

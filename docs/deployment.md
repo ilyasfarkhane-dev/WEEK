@@ -8,6 +8,10 @@ Application records live in `data/store.json` (or the path in `DATA_FILE`). Seed
 
 `GET /api/health` reports the JSON store. Use it for a load-balancer check. It does not require a session.
 
+## Vercel
+
+`vercel.json` tells the host to publish the Vite `dist` folder and to run the API as a function. Set `AUTH_SECRET` in the project environment before the first deploy. The build loads the demonstration records into the function. Those writes go to temporary disk and disappear when the function is recycled. Use Docker, with `data/store.json` on a volume, when the records need to last.
+
 ## Docker
 
 `docker-compose.yml` starts the app and keeps `data/store.json` on a volume. `AUTH_SECRET` in that file is a placeholder. Replace it before anyone else can reach the host.

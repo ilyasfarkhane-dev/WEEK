@@ -1,5 +1,5 @@
 import { randomBytes } from "node:crypto";
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { copyFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 
 type Row = Record<string, unknown>;
@@ -42,7 +42,14 @@ type Model = {
 
 type Where = Record<string, unknown>;
 
-const STORE_PATH = process.env.DATA_FILE || path.join(process.cwd(), "data", "store.json");
+function storePath() {
+  if (process.env.DATA_FILE) return process.env.DATA_FILE;
+  const bundled = path.join(process.cwd(), "data", "store.json");
+  if (!process.env.AWS_EXECUTION_ENV) return bundled;
+  const runtime = "/tmp/gic-store.json";
+  if (!existsSync(runtime) && existsSync(bundled)) copyFileSync(bundled, runtime);
+  return existsSync(runtime) ? runtime : bundled;
+}
 
 function camel(name: string) {
   return name.charAt(0).toLowerCase() + name.slice(1);
@@ -194,8 +201,9 @@ class Store {
   constructor() {
     const schemaPath = path.join(process.cwd(), "prisma", "schema.prisma");
     this.models = parseSchema(readFileSync(schemaPath, "utf8"));
-    if (existsSync(STORE_PATH)) {
-      const saved = JSON.parse(readFileSync(STORE_PATH, "utf8")) as Record<string, Row[]>;
+    const file = storePath();
+    if (existsSync(file)) {
+      const saved = JSON.parse(readFileSync(file, "utf8")) as Record<string, Row[]>;
       for (const [name, rows] of Object.entries(saved)) {
         const model = this.models.get(name);
         if (model && Array.isArray(rows)) model.rows = rows;
@@ -209,10 +217,11 @@ class Store {
   }
 
   save() {
-    mkdirSync(path.dirname(STORE_PATH), { recursive: true });
+    const file = storePath();
+    mkdirSync(path.dirname(file), { recursive: true });
     const data: Record<string, Row[]> = {};
     for (const model of this.models.values()) data[model.name] = model.rows;
-    writeFileSync(STORE_PATH, `${JSON.stringify(data, null, 2)}\n`);
+    writeFileSync(file, `${JSON.stringify(data, null, 2)}\n`);
   }
 
   model(name: string) {

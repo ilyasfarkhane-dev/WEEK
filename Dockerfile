@@ -6,4 +6,4 @@ COPY . .
 RUN npx prisma generate && npx vite build
 ENV NODE_ENV=production
 EXPOSE 3000
-CMD ["npx", "tsx", "server/index.ts"]
+CMD ["npx", "tsx", "server/listen.ts"]

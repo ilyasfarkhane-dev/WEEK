@@ -3,9 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "tsx server/index.ts",
+    "dev": "tsx server/listen.ts",
     "build": "prisma generate && vite build",
-    "start": "tsx server/index.ts",
+    "start": "tsx server/listen.ts",
     "lint": "eslint",
     "db:up": "node scripts/local-postgres.mjs",
     "db:migrate": "prisma migrate dev",
@@ -20,7 +20,6 @@
     "seed": "tsx prisma/seed.ts"
   },
   "dependencies": {
-    "@auth/prisma-adapter": "^2.11.3",
     "@hookform/resolvers": "^6.0.2",
     "@prisma/client": "^6.19.2",
     "@radix-ui/react-avatar": "^1.3.1",
@@ -45,8 +44,6 @@
     "date-fns": "^4.4.0",
     "express": "^4.22.3",
     "lucide-react": "^1.63.0",
-    "next": "16.4.3",
-    "next-auth": "^5.0.0-beta.32",
     "pdf-lib": "^1.17.1",
     "react": "19.3.0",
     "react-dom": "19.3.0",
@@ -69,7 +66,6 @@
     "@types/react-dom": "^19",
     "dotenv": "^18.0.9",
     "eslint": "^9",
-    "eslint-config-next": "16.4.3",
     "jsdom": "^29.1.1",
     "prisma": "^6.19.2",
     "tailwindcss": "^4",
