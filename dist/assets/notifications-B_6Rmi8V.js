@@ -1,0 +1,1 @@
+import{P as e}from"./index-BfLp1FAa.js";import"./noop-DLNmc5u_.js";import{t}from"./db-C1Zvzr1j.js";import{n}from"./actor-CEc7bI5o.js";async function r(){let{actor:r}=await n();return await t.notification.updateMany({where:{userId:r.id,readAt:null},data:{readAt:new Date}}),e(`Notifications marked as read.`)}export{r as markNotificationsReadAction};

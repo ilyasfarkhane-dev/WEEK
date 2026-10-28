@@ -131,7 +131,7 @@ export async function createResourceAction(formData: FormData) {
     fileName = path.basename(file.name).slice(0, 120);
     mimeType = file.type;
     fileSize = file.size;
-    const directory = process.env.UPLOAD_DIR || path.join(process.cwd(), "storage", "uploads");
+    const directory = process.env.UPLOAD_DIR || (typeof process.cwd === "function" ? path.join(process.cwd(), "storage", "uploads") : "storage/uploads");
     await mkdir(directory, { recursive: true });
     await writeFile(path.join(directory, fileKey), Buffer.from(await file.arrayBuffer()));
   }

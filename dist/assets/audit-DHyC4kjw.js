@@ -1,0 +1,1 @@
+import{t as e}from"./db-C1Zvzr1j.js";async function t(t,n,r,i,a){await e.auditEvent.create({data:{actorId:t,action:n,entityType:r,entityId:i??null,metadata:a}})}export{t};

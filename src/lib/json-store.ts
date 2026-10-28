@@ -43,6 +43,7 @@ type Model = {
 type Where = Record<string, unknown>;
 
 function storePath() {
+  if (typeof window !== "undefined") return "data/store.json";
   if (process.env.DATA_FILE) return process.env.DATA_FILE;
   const bundled = path.join(process.cwd(), "data", "store.json");
   if (!process.env.AWS_EXECUTION_ENV) return bundled;
@@ -199,7 +200,7 @@ class Store {
   models: Map<string, Model>;
 
   constructor() {
-    const schemaPath = path.join(process.cwd(), "prisma", "schema.prisma");
+    const schemaPath = typeof window !== "undefined" ? "prisma/schema.prisma" : path.join(process.cwd(), "prisma", "schema.prisma");
     this.models = parseSchema(readFileSync(schemaPath, "utf8"));
     const file = storePath();
     if (existsSync(file)) {

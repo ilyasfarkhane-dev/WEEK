@@ -1,0 +1,1 @@
+import{t as e}from"./db-C1Zvzr1j.js";async function t(t){let n=await e.codeSequence.upsert({where:{prefix:t},create:{prefix:t,value:1},update:{value:{increment:1}}});return`${t}-${new Date().getUTCFullYear()}-${String(n.value).padStart(4,`0`)}`}export{t};

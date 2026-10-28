@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
+import { loadSession } from "@/client/runtime";
 import type { AppRole, UserStatus } from "@prisma/client";
 
 export type SessionData = {
@@ -40,7 +41,7 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
     return data;
   }, []);
   const refresh = useCallback(async () => {
-    const data = (await fetch("/api/session", { credentials: "include" }).then((response) => response.json())) as SessionData;
+    const data = (await loadSession()) as SessionData;
     return apply(data);
   }, [apply]);
 

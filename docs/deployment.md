@@ -10,7 +10,7 @@ Application records live in `data/store.json` (or the path in `DATA_FILE`). Seed
 
 ## Vercel
 
-`vercel.json` tells the host to publish the Vite `dist` folder and to run the API as a function. Set `AUTH_SECRET` in the project environment before the first deploy. The build loads the demonstration records into the function. Those writes go to temporary disk and disappear when the function is recycled. Use Docker, with `data/store.json` on a volume, when the records need to last.
+The hosted site is the Vite application only. There is no API server. The build writes the demonstration records to `store.json`, and the browser keeps its own copy of that file. Changes stay in that browser. Use Docker, with `data/store.json` on a volume, when every visitor should share one record file.
 
 ## Docker
 

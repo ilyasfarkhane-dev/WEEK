@@ -15,7 +15,25 @@ function sign(payload: string) {
   return createHmac("sha256", secret()).update(payload).digest("base64url");
 }
 
+const LOCAL_KEY = "gic.user";
+
+function browserUser() {
+  if (typeof window === "undefined") return undefined;
+  const raw = window.localStorage.getItem(LOCAL_KEY);
+  if (!raw) return null;
+  try {
+    return JSON.parse(raw) as { sub?: string; exp?: number };
+  } catch {
+    return null;
+  }
+}
+
 export function readSessionUserId() {
+  const saved = browserUser();
+  if (saved !== undefined) {
+    if (!saved?.sub || !saved.exp || saved.exp < Date.now()) return null;
+    return saved.sub;
+  }
   const token = requestCookie(COOKIE);
   if (!token) return null;
   const [payload, signature] = token.split(".");
@@ -34,6 +52,10 @@ export function readSessionUserId() {
 }
 
 export function setSessionUser(userId: string) {
+  if (typeof window !== "undefined") {
+    window.localStorage.setItem(LOCAL_KEY, JSON.stringify({ sub: userId, exp: Date.now() + MAX_AGE * 1000 }));
+    return;
+  }
   const payload = Buffer.from(JSON.stringify({ sub: userId, exp: Date.now() + MAX_AGE * 1000 })).toString("base64url");
   setCookie(COOKIE, `${payload}.${sign(payload)}`, {
     httpOnly: true,
@@ -45,5 +67,9 @@ export function setSessionUser(userId: string) {
 }
 
 export function clearSession() {
+  if (typeof window !== "undefined") {
+    window.localStorage.removeItem(LOCAL_KEY);
+    return;
+  }
   clearCookie(COOKIE);
 }
