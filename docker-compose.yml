@@ -1,0 +1,12 @@
+services:
+  app:
+    build: .
+    environment:
+      AUTH_SECRET: replace-before-any-shared-deployment
+      AUTH_URL: http://localhost:3000
+    ports:
+      - "3000:3000"
+    volumes:
+      - gicdata:/app/data
+volumes:
+  gicdata:

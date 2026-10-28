@@ -1,36 +1,56 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Governance Innovation Community
 
-## Getting Started
+GIC is a six-month workspace for a cohort of public officials, facilitators, programme managers, institutional sponsors, and invited experts. Members move from a challenge to a collaborative proposal, a recorded institutional authorization, a test, and a decision about what to keep.
 
-First, run the development server:
+The interface is English. A member can store a French or Arabic language preference. Arabic also switches the layout to right-to-left. Translations are not included yet.
+
+## Local setup
+
+Requirements: Node.js 24. Records are a JSON document at `data/store.json`, not a database server.
 
 ```bash
+npm install
+npm run db:seed
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+`npm run db:seed` rewrites `data/store.json` with the demonstration cohort. Set `AUTH_SECRET` in `.env` before signing in.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Open http://localhost:3000.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### Demonstration accounts
 
-## Learn More
+Every seeded person, institution, authorization, and outcome is synthetic. The banner in the application says so.
 
-To learn more about Next.js, take a look at the following resources:
+Password for every demonstration account: `Demo-GIC-2026!`
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+| Email | Role |
+| --- | --- |
+| ada.mensah@demo.gic.local | Platform administrator |
+| mina.rossi@demo.gic.local | Programme manager |
+| facilitator.1@demo.gic.local | Facilitator, Citizens as Co-Creators |
+| omar.hassan@demo.gic.local | Participant in that workspace |
+| samir.nasser@demo.gic.local | Sponsor with access to one project |
+| noor.elamin@demo.gic.local | Expert with access to that same project |
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+An unused invitation is seeded for Amina Diallo:
 
-## Deploy on Vercel
+`/register/invitation?token=demo-invite-amina-gic-2026-token`
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Seeding deletes and recreates application data. It refuses to run when `NODE_ENV=production` unless `ALLOW_DEMO_SEED=true`.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Scripts
+
+- `npm run dev` starts the application.
+- `npm run db:seed` rewrites `data/store.json` with the demonstration cohort.
+- `npm test` runs unit tests for access rules and measure calculations.
+- `npm run test:e2e` runs Playwright against a seeded local server.
+
+## What is intentionally not running
+
+- Email is queued in an outbox. Nothing is described as delivered unless a provider is added and confirms it. See `src/lib/email.ts`.
+- The reminder job at `POST /api/cron/reminders` stays disabled until `CRON_SECRET` is set.
+- AI assistance is a disabled provider. No text is sent to a model.
+- An OpenID Connect provider is added only when `AUTH_OIDC_ISSUER`, `AUTH_OIDC_CLIENT_ID`, and `AUTH_OIDC_CLIENT_SECRET` are set. It can sign in an account that already exists. It does not create accounts.
+
+Further operating notes are in `docs/architecture.md`, `docs/security.md`, `docs/deployment.md`, and `docs/backlog.md`.

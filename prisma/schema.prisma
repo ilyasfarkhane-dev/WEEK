@@ -1,0 +1,981 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserStatus {
+  INVITED
+  ACTIVE
+  SUSPENDED
+  ARCHIVED
+}
+
+enum AppRole {
+  PLATFORM_ADMIN
+  INSTITUTIONAL_SPONSOR
+  PROGRAMME_MANAGER
+  THEMATIC_FACILITATOR
+  PARTICIPANT
+  EXPERT
+}
+
+enum MembershipRole {
+  FACILITATOR
+  MEMBER
+  CONTRIBUTOR
+  OBSERVER
+}
+
+enum Visibility {
+  PRIVATE
+  TEAM
+  PROGRAMME
+  RESTRICTED
+}
+
+enum Confidentiality {
+  INTERNAL
+  CONFIDENTIAL
+  RESTRICTED
+}
+
+enum ChallengeStatus {
+  SUBMITTED
+  UNDER_REVIEW
+  SELECTED
+  MERGED
+  REFERRED
+  RETAINED
+  CLOSED
+}
+
+enum ProjectStage {
+  PROBLEM_DEFINED
+  PROPOSAL_DEVELOPED
+  AUTHORIZATION_SOUGHT
+  TEST_APPROVED
+  TESTING
+  EVIDENCE_REVIEWED
+  DECISION_RECORDED
+}
+
+enum ProjectStatus {
+  ACTIVE
+  PAUSED
+  ARCHIVED
+  CLOSED
+}
+
+enum FinalDecision {
+  UNDECIDED
+  CONTINUE
+  REVISE
+  STOP
+}
+
+enum ApprovalState {
+  NOT_REQUESTED
+  REQUESTED
+  APPROVED
+  REJECTED
+  CONDITIONAL
+}
+
+enum HelpRequestKind {
+  HELP_NEEDED
+  EXPERTISE_OFFERED
+  PEER_INSTITUTION
+  EXPERT_REVIEW
+  EXAMPLES
+}
+
+enum HelpStatus {
+  OPEN
+  MATCHED
+  IN_DISCUSSION
+  RESOLVED
+  CLOSED
+}
+
+enum Priority {
+  LOW
+  NORMAL
+  HIGH
+}
+
+enum ResourceType {
+  CASE_STUDY
+  TEMPLATE
+  POLICY
+  RESEARCH
+  GUIDE
+  WORKSHOP
+  LESSON
+  PRESENTATION
+}
+
+enum ResourceVerification {
+  DRAFT
+  COMMUNITY
+  VERIFIED
+}
+
+enum EventKind {
+  ONBOARDING
+  SUMMIT
+  WORKSHOP
+  REVIEW
+  CLINIC
+  DEMONSTRATION
+  OTHER
+}
+
+enum AttendanceStatus {
+  REGISTERED
+  ATTENDED
+  ABSENT
+  CANCELLED
+}
+
+enum ActionStatus {
+  OPEN
+  IN_PROGRESS
+  DONE
+  CANCELLED
+}
+
+enum NotificationType {
+  INVITATION
+  WORKSPACE_ASSIGNMENT
+  COMMENT
+  MENTION
+  HELP_RESPONSE
+  ACTION_ASSIGNMENT
+  DEADLINE
+  PROJECT_STAGE
+  EVENT_REMINDER
+  REVIEW_REQUEST
+  SYSTEM
+}
+
+enum ProfileVisibility {
+  PROGRAMME
+  TEAM
+  PRIVATE
+}
+
+enum EvidenceLevel {
+  SELF_REPORTED
+  VERIFIED
+  INSUFFICIENT
+}
+
+enum LocaleCode {
+  en
+  fr
+  ar
+}
+
+enum DigestFrequency {
+  OFF
+  IMMEDIATE
+  DAILY
+  WEEKLY
+}
+
+model Country {
+  code         String        @id
+  name         String
+  institutions Institution[]
+  profiles     Profile[]
+  challenges   Challenge[]
+  projects     Project[]
+}
+
+model Institution {
+  id          String                  @id @default(cuid())
+  name        String
+  countryCode String
+  country     Country                 @relation(fields: [countryCode], references: [code])
+  kind        String
+  isDemo      Boolean                 @default(false)
+  createdAt   DateTime                @default(now())
+  updatedAt   DateTime                @updatedAt
+  archivedAt  DateTime?
+  users       User[]
+  challenges  Challenge[]
+  projects    Project[]
+  approvals   InstitutionalApproval[]
+  invitations Invitation[]
+
+  @@index([countryCode])
+  @@index([name])
+}
+
+model User {
+  id                    String    @id @default(cuid())
+  email                 String    @unique
+  name                  String
+  passwordHash          String?
+  status                UserStatus @default(INVITED)
+  emailVerified         DateTime?
+  isDemo                Boolean   @default(false)
+  onboardingCompletedAt DateTime?
+  rulesAcceptedAt       DateTime?
+  rulesVersion          String?
+  lastActiveAt          DateTime?
+  institutionId         String?
+  institution           Institution? @relation(fields: [institutionId], references: [id])
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+  deletedAt             DateTime?
+
+  profile                 Profile?
+  roles                   UserRole[]
+  memberships             WorkspaceMembership[]
+  expertise               UserExpertise[]
+  facilitatedThemes       Theme[]                  @relation("ThemeFacilitator")
+  invitationsSent         Invitation[]             @relation("InvitedBy")
+  passwordResets          PasswordResetToken[]
+  loginAttempts           LoginAttempt[]
+  challengesOwned         Challenge[]              @relation("ChallengeOwner")
+  challengesCreated       Challenge[]              @relation("ChallengeCreator")
+  challengeReviews        ChallengeReview[]
+  projectsLed             Project[]                @relation("ProjectLead")
+  projectMembers          ProjectMember[]
+  commitments             ParticipantCommitment[]
+  approvalsRequested      InstitutionalApproval[]  @relation("ApprovalRequester")
+  canvasUpdates           SolutionCanvas[]         @relation("CanvasUpdater")
+  canvasVersions          CanvasVersion[]
+  canvasComments          CanvasComment[]
+  comments                Comment[]
+  helpRequests            HelpRequest[]            @relation("HelpRequester")
+  helpAssigned            HelpRequest[]            @relation("HelpAssignee")
+  helpResponses           HelpResponse[]
+  resources               Resource[]
+  eventsHosted            Event[]                  @relation("EventHost")
+  registrations           EventRegistration[]
+  actionsOwned            ActionItem[]             @relation("ActionOwner")
+  actionsCreated          ActionItem[]             @relation("ActionCreator")
+  outcomes                OutcomeMeasurement[]
+  notifications           Notification[]
+  notificationPreference  NotificationPreference?
+  auditEvents             AuditEvent[]
+  projectGrants           ProjectGrant[]           @relation("GrantHolder")
+  grantsGiven             ProjectGrant[]           @relation("GrantGiver")
+  challengeGrants         ChallengeGrant[]
+  announcements           Announcement[]
+  activities              ActivityEvent[]
+  themeNotes              ThemeNote[]
+
+  @@index([institutionId])
+  @@index([status])
+  @@index([lastActiveAt])
+}
+
+model Profile {
+  id                 String            @id @default(cuid())
+  userId             String            @unique
+  user               User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  fullName           String
+  title              String            @default("")
+  biography          String            @default("")
+  countryCode        String?
+  country            Country?          @relation(fields: [countryCode], references: [code])
+  themesOfInterest   String[]
+  expertiseOffered   String            @default("")
+  supportRequested   String            @default("")
+  preferredLanguage  LocaleCode        @default(en)
+  profileVisibility  ProfileVisibility @default(PROGRAMME)
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
+}
+
+model ExpertiseTag {
+  id    String          @id @default(cuid())
+  slug  String          @unique
+  label String
+  users UserExpertise[]
+}
+
+model UserExpertise {
+  userId String
+  tagId  String
+  user   User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tag    ExpertiseTag @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([userId, tagId])
+  @@index([tagId])
+}
+
+model UserRole {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role      AppRole
+  createdAt DateTime @default(now())
+
+  @@unique([userId, role])
+  @@index([role])
+}
+
+model Theme {
+  id            String    @id @default(cuid())
+  slug          String    @unique
+  name          String
+  summary       String
+  objectives    String
+  sortOrder     Int
+  facilitatorId String?
+  facilitator   User?     @relation("ThemeFacilitator", fields: [facilitatorId], references: [id])
+  archivedAt    DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  memberships  WorkspaceMembership[]
+  challenges   Challenge[]
+  projects     Project[]
+  resources    Resource[]
+  events       Event[]
+  helpRequests HelpRequest[]
+  actions      ActionItem[]
+  comments     Comment[]
+  invitations  Invitation[]
+  notes        ThemeNote[]
+  activities   ActivityEvent[]
+}
+
+model WorkspaceMembership {
+  id        String         @id @default(cuid())
+  themeId   String
+  theme     Theme          @relation(fields: [themeId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role      MembershipRole @default(MEMBER)
+  isPrimary Boolean        @default(false)
+  createdAt DateTime       @default(now())
+
+  @@unique([themeId, userId])
+  @@index([userId, isPrimary])
+}
+
+model Invitation {
+  id            String    @id @default(cuid())
+  email         String
+  fullName      String
+  tokenHash     String    @unique
+  roles         AppRole[]
+  themeId       String?
+  theme         Theme?    @relation(fields: [themeId], references: [id])
+  institutionId String?
+  institution   Institution? @relation(fields: [institutionId], references: [id])
+  invitedById   String
+  invitedBy     User      @relation("InvitedBy", fields: [invitedById], references: [id])
+  expiresAt     DateTime
+  acceptedAt    DateTime?
+  revokedAt     DateTime?
+  createdAt     DateTime  @default(now())
+
+  @@index([email])
+}
+
+model PasswordResetToken {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId])
+}
+
+model LoginAttempt {
+  id        String   @id @default(cuid())
+  email     String
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id])
+  success   Boolean
+  createdAt DateTime @default(now())
+
+  @@index([email, createdAt])
+}
+
+model Challenge {
+  id                String           @id @default(cuid())
+  code              String           @unique
+  title             String
+  problemStatement  String
+  institutionId     String
+  institution       Institution      @relation(fields: [institutionId], references: [id])
+  countryCode       String
+  country           Country          @relation(fields: [countryCode], references: [code])
+  context           String
+  affectedUsers     String
+  evidence          String
+  previousAttempts  String
+  expectedBenefit   String
+  themeId           String
+  theme             Theme            @relation(fields: [themeId], references: [id])
+  expertiseRequired String
+  ownerId           String
+  owner             User             @relation("ChallengeOwner", fields: [ownerId], references: [id])
+  createdById       String
+  createdBy         User             @relation("ChallengeCreator", fields: [createdById], references: [id])
+  visibility        Visibility       @default(PROGRAMME)
+  confidentiality   Confidentiality  @default(INTERNAL)
+  status            ChallengeStatus  @default(SUBMITTED)
+  mergedIntoId      String?
+  mergedInto        Challenge?       @relation("ChallengeMerge", fields: [mergedIntoId], references: [id])
+  mergedFrom        Challenge[]      @relation("ChallengeMerge")
+  isDemo            Boolean          @default(false)
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+  archivedAt        DateTime?
+
+  reviews  ChallengeReview[]
+  projects Project[]
+  grants   ChallengeGrant[]
+  comments Comment[]
+
+  @@index([status])
+  @@index([themeId])
+  @@index([countryCode])
+  @@index([institutionId])
+  @@index([ownerId])
+}
+
+model ChallengeReview {
+  id           String          @id @default(cuid())
+  challengeId  String
+  challenge    Challenge       @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+  reviewerId   String
+  reviewer     User            @relation(fields: [reviewerId], references: [id])
+  fromStatus   ChallengeStatus
+  toStatus     ChallengeStatus
+  decisionNote String
+  createdAt    DateTime        @default(now())
+
+  @@index([challengeId])
+}
+
+model ChallengeGrant {
+  challengeId String
+  userId      String
+  permission  String
+  challenge   Challenge @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt   DateTime  @default(now())
+
+  @@id([challengeId, userId])
+}
+
+model Project {
+  id                    String          @id @default(cuid())
+  code                  String          @unique
+  title                 String
+  summary               String
+  institutionId         String
+  institution           Institution     @relation(fields: [institutionId], references: [id])
+  countryCode           String
+  country               Country         @relation(fields: [countryCode], references: [code])
+  themeId               String
+  theme                 Theme           @relation(fields: [themeId], references: [id])
+  leadId                String
+  lead                  User            @relation("ProjectLead", fields: [leadId], references: [id])
+  challengeId           String?
+  challenge             Challenge?      @relation(fields: [challengeId], references: [id])
+  stage                 ProjectStage    @default(PROBLEM_DEFINED)
+  status                ProjectStatus   @default(ACTIVE)
+  finalDecision         FinalDecision   @default(UNDECIDED)
+  decisionJustification String          @default("")
+  lessonsLearned        String          @default("")
+  resultsSummary        String          @default("")
+  baseline              String          @default("")
+  successIndicators     String          @default("")
+  resourcesNeeded       String          @default("")
+  risks                 String          @default("")
+  dependencies          String          @default("")
+  visibility            Visibility      @default(TEAM)
+  confidentiality       Confidentiality @default(CONFIDENTIAL)
+  isDemo                Boolean         @default(false)
+  createdAt             DateTime        @default(now())
+  updatedAt             DateTime        @updatedAt
+  pausedAt              DateTime?
+  closedAt              DateTime?
+  archivedAt            DateTime?
+
+  members      ProjectMember[]
+  canvas       SolutionCanvas?
+  milestones   Milestone[]
+  actions      ActionItem[]
+  approvals    InstitutionalApproval[]
+  commitments  ParticipantCommitment[]
+  outcomes     OutcomeMeasurement[]
+  comments     Comment[]
+  grants       ProjectGrant[]
+  activities   ActivityEvent[]
+  events       Event[]
+  resourceLinks ResourceProject[]
+
+  @@index([stage])
+  @@index([status])
+  @@index([themeId])
+  @@index([countryCode])
+  @@index([institutionId])
+  @@index([leadId])
+}
+
+model ProjectMember {
+  id        String   @id @default(cuid())
+  projectId String
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role      String
+  createdAt DateTime @default(now())
+
+  @@unique([projectId, userId])
+  @@index([userId])
+}
+
+model ProjectGrant {
+  projectId   String
+  userId      String
+  permission  String
+  note        String   @default("")
+  grantedById String?
+  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user        User     @relation("GrantHolder", fields: [userId], references: [id], onDelete: Cascade)
+  grantedBy   User?    @relation("GrantGiver", fields: [grantedById], references: [id])
+  createdAt   DateTime @default(now())
+
+  @@id([projectId, userId])
+  @@index([userId])
+}
+
+model SolutionCanvas {
+  id               String   @id @default(cuid())
+  projectId        String   @unique
+  project          Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  workingJson      Json
+  workingUpdatedAt DateTime @default(now())
+  updatedById      String?
+  updatedBy        User?    @relation("CanvasUpdater", fields: [updatedById], references: [id])
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  versions     CanvasVersion[]
+  comments     CanvasComment[]
+}
+
+model CanvasVersion {
+  id            String   @id @default(cuid())
+  canvasId      String
+  canvas        SolutionCanvas @relation(fields: [canvasId], references: [id], onDelete: Cascade)
+  versionNumber Int
+  content       Json
+  fieldSnapshot Json
+  contentHash   String
+  authorId      String
+  author        User     @relation(fields: [authorId], references: [id])
+  note          String   @default("")
+  createdAt     DateTime @default(now())
+
+  @@unique([canvasId, versionNumber])
+  @@index([canvasId, createdAt])
+}
+
+model CanvasComment {
+  id         String         @id @default(cuid())
+  canvasId   String
+  canvas     SolutionCanvas @relation(fields: [canvasId], references: [id], onDelete: Cascade)
+  sectionKey String
+  authorId   String
+  author     User           @relation(fields: [authorId], references: [id])
+  body       String
+  createdAt  DateTime       @default(now())
+  updatedAt  DateTime       @updatedAt
+
+  @@index([canvasId, sectionKey])
+}
+
+model CanvasFieldDefinition {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  label     String
+  helpText  String
+  sortOrder Int
+  required  Boolean  @default(false)
+  active    Boolean  @default(true)
+  updatedAt DateTime @updatedAt
+}
+
+model Comment {
+  id          String    @id @default(cuid())
+  body        String
+  authorId    String
+  author      User      @relation(fields: [authorId], references: [id])
+  projectId   String?
+  project     Project?  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  challengeId String?
+  challenge   Challenge? @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+  themeId     String?
+  theme       Theme?    @relation(fields: [themeId], references: [id], onDelete: Cascade)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+
+  @@index([themeId, createdAt])
+  @@index([projectId, createdAt])
+  @@index([challengeId, createdAt])
+}
+
+model HelpRequest {
+  id              String          @id @default(cuid())
+  code            String          @unique
+  kind            HelpRequestKind
+  title           String
+  description     String
+  requesterId     String
+  requester       User            @relation("HelpRequester", fields: [requesterId], references: [id])
+  institutionId   String?
+  themeId         String?
+  theme           Theme?          @relation(fields: [themeId], references: [id])
+  skillsRequired  String
+  visibility      Visibility      @default(PROGRAMME)
+  priority        Priority        @default(NORMAL)
+  responseBy      DateTime?
+  status          HelpStatus      @default(OPEN)
+  assigneeId      String?
+  assignee        User?           @relation("HelpAssignee", fields: [assigneeId], references: [id])
+  outcome         String          @default("")
+  isDemo          Boolean         @default(false)
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  closedAt        DateTime?
+
+  responses HelpResponse[]
+
+  @@index([status])
+  @@index([themeId])
+  @@index([requesterId])
+}
+
+model HelpResponse {
+  id        String      @id @default(cuid())
+  requestId String
+  request   HelpRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  authorId  String
+  author    User        @relation(fields: [authorId], references: [id])
+  body      String
+  createdAt DateTime    @default(now())
+
+  @@index([requestId])
+}
+
+model Resource {
+  id            String               @id @default(cuid())
+  title         String
+  description   String
+  type          ResourceType
+  themeId       String?
+  theme         Theme?               @relation(fields: [themeId], references: [id])
+  language      LocaleCode           @default(en)
+  source        String               @default("")
+  attribution   String               @default("")
+  publishedOn   DateTime?
+  authorName    String               @default("")
+  tags          String[]
+  visibility    Visibility           @default(PROGRAMME)
+  verification  ResourceVerification @default(DRAFT)
+  featured      Boolean              @default(false)
+  externalUrl   String?
+  fileName      String?
+  fileKey       String?
+  mimeType      String?
+  fileSize      Int?
+  createdById   String
+  createdBy     User                 @relation(fields: [createdById], references: [id])
+  isDemo        Boolean              @default(false)
+  createdAt     DateTime             @default(now())
+  updatedAt     DateTime             @updatedAt
+  archivedAt    DateTime?
+
+  projects ResourceProject[]
+
+  @@index([type])
+  @@index([themeId])
+  @@index([verification])
+  @@index([featured])
+}
+
+model ResourceProject {
+  resourceId String
+  projectId  String
+  resource   Resource @relation(fields: [resourceId], references: [id], onDelete: Cascade)
+  project    Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@id([resourceId, projectId])
+}
+
+model Event {
+  id           String     @id @default(cuid())
+  title        String
+  description  String
+  kind         EventKind
+  hostId       String?
+  host         User?      @relation("EventHost", fields: [hostId], references: [id])
+  startsAt     DateTime
+  endsAt       DateTime
+  timeZone     String     @default("UTC")
+  themeId      String?
+  theme        Theme?     @relation(fields: [themeId], references: [id])
+  projectId    String?
+  project      Project?   @relation(fields: [projectId], references: [id])
+  meetingUrl   String?
+  preparation  String     @default("")
+  notes        String     @default("")
+  followUp     String     @default("")
+  visibility   Visibility @default(PROGRAMME)
+  isDemo       Boolean    @default(false)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  registrations EventRegistration[]
+  actions       ActionItem[]
+
+  @@index([startsAt])
+  @@index([themeId])
+}
+
+model EventRegistration {
+  id        String           @id @default(cuid())
+  eventId   String
+  event     Event            @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  status    AttendanceStatus @default(REGISTERED)
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+
+  @@unique([eventId, userId])
+  @@index([userId])
+}
+
+model Milestone {
+  id          String    @id @default(cuid())
+  projectId   String
+  project     Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  title       String
+  dueOn       DateTime?
+  completedAt DateTime?
+  notes       String    @default("")
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([projectId])
+  @@index([dueOn])
+}
+
+model ActionItem {
+  id          String       @id @default(cuid())
+  title       String
+  description String       @default("")
+  status      ActionStatus @default(OPEN)
+  dueOn       DateTime?
+  ownerId     String?
+  owner       User?        @relation("ActionOwner", fields: [ownerId], references: [id])
+  createdById String
+  createdBy   User         @relation("ActionCreator", fields: [createdById], references: [id])
+  projectId   String?
+  project     Project?     @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  themeId     String?
+  theme       Theme?       @relation(fields: [themeId], references: [id])
+  eventId     String?
+  event       Event?       @relation(fields: [eventId], references: [id])
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  completedAt DateTime?
+
+  @@index([ownerId, status])
+  @@index([projectId])
+  @@index([dueOn])
+  @@index([themeId])
+}
+
+model InstitutionalApproval {
+  id             String        @id @default(cuid())
+  projectId      String
+  project        Project       @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  institutionId  String
+  institution    Institution   @relation(fields: [institutionId], references: [id])
+  sponsorName    String
+  state          ApprovalState @default(NOT_REQUESTED)
+  isFormal       Boolean       @default(true)
+  requestedById  String?
+  requestedBy    User?         @relation("ApprovalRequester", fields: [requestedById], references: [id])
+  decidedByName  String        @default("")
+  decisionNote   String        @default("")
+  requestedAt    DateTime?
+  decidedAt      DateTime?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  @@index([projectId])
+  @@index([state])
+}
+
+model ParticipantCommitment {
+  id        String   @id @default(cuid())
+  projectId String
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  statement String
+  createdAt DateTime @default(now())
+
+  @@index([projectId])
+}
+
+model OutcomeMeasurement {
+  id            String        @id @default(cuid())
+  projectId     String
+  project       Project       @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  indicator     String
+  definition    String
+  valueText     String
+  evidenceLevel EvidenceLevel @default(SELF_REPORTED)
+  recordedById  String
+  recordedBy    User          @relation(fields: [recordedById], references: [id])
+  notes         String        @default("")
+  recordedAt    DateTime      @default(now())
+
+  @@index([projectId])
+  @@index([evidenceLevel])
+}
+
+model Notification {
+  id        String           @id @default(cuid())
+  userId    String
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      NotificationType
+  title     String
+  body      String
+  href      String?
+  dedupeKey String?
+  readAt    DateTime?
+  createdAt DateTime         @default(now())
+
+  @@index([userId, readAt, createdAt])
+  @@index([dedupeKey])
+}
+
+model NotificationPreference {
+  userId          String          @id
+  user            User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  inAppEnabled    Boolean         @default(true)
+  emailEnabled    Boolean         @default(false)
+  digestFrequency DigestFrequency @default(DAILY)
+  mutedTypes      NotificationType[]
+  updatedAt       DateTime        @updatedAt
+}
+
+model EmailOutbox {
+  id        String    @id @default(cuid())
+  toAddress String
+  subject   String
+  body      String
+  status    String
+  provider  String
+  detail    String
+  createdAt DateTime  @default(now())
+  sentAt    DateTime?
+
+  @@index([status, createdAt])
+}
+
+model AuditEvent {
+  id         String   @id @default(cuid())
+  actorId    String?
+  actor      User?    @relation(fields: [actorId], references: [id])
+  action     String
+  entityType String
+  entityId   String?
+  metadata   Json?
+  createdAt  DateTime @default(now())
+
+  @@index([entityType, entityId])
+  @@index([createdAt])
+  @@index([actorId])
+}
+
+model ThemeNote {
+  id        String   @id @default(cuid())
+  themeId   String
+  theme     Theme    @relation(fields: [themeId], references: [id], onDelete: Cascade)
+  authorId  String
+  author    User     @relation(fields: [authorId], references: [id])
+  kind      String
+  title     String
+  body      String
+  createdAt DateTime @default(now())
+
+  @@index([themeId, createdAt])
+}
+
+model ActivityEvent {
+  id        String   @id @default(cuid())
+  projectId String?
+  project   Project? @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  themeId   String?
+  theme     Theme?   @relation(fields: [themeId], references: [id], onDelete: Cascade)
+  actorId   String?
+  actor     User?    @relation(fields: [actorId], references: [id])
+  summary   String
+  createdAt DateTime @default(now())
+
+  @@index([projectId, createdAt])
+  @@index([themeId, createdAt])
+}
+
+model Announcement {
+  id        String    @id @default(cuid())
+  title     String
+  body      String
+  authorId  String
+  author    User      @relation(fields: [authorId], references: [id])
+  createdAt DateTime  @default(now())
+  expiresAt DateTime?
+
+  @@index([createdAt])
+}
+
+model ProgrammeSettings {
+  id              String    @id @default("default")
+  name            String    @default("Governance Innovation Community")
+  phase           String    @default("PRE_SUMMIT")
+  phaseLabel      String
+  rulesVersion    String
+  rulesText       String
+  targets         Json
+  demonstration   Boolean   @default(true)
+  summitStartsOn  DateTime?
+  updatedAt       DateTime  @updatedAt
+}
+
+model RateLimitBucket {
+  id          String   @id
+  count       Int
+  windowStart DateTime
+}
+
+model CodeSequence {
+  prefix String @id
+  value  Int
+}
