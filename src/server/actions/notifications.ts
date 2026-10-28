@@ -1,6 +1,4 @@
-"use server";
-
-import { revalidatePath } from "next/cache";
+import { revalidatePath } from "@/server/noop";
 import { prisma } from "@/lib/db";
 import { requireActor } from "@/server/actor";
 import { ok } from "@/server/result";

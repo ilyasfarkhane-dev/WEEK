@@ -1,6 +1,6 @@
 # Architecture
 
-The application is a Next.js App Router project. Server actions and route handlers hold the workflows. Records are stored in `data/store.json`. The browser does not receive a credential or an administrative secret.
+The interface is a React application built with Vite. An Express API holds the workflows. Records are stored in `data/store.json`. The browser does not receive a credential or an administrative secret.
 
 ## Boundaries
 

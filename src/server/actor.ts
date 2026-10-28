@@ -1,8 +1,8 @@
-import { redirect } from "next/navigation";
 import type { AppRole } from "@prisma/client";
-import { auth } from "@/auth";
 import { prisma } from "@/lib/db";
 import type { Actor } from "@/lib/authz";
+import { redirect } from "@/server/result";
+import { readSessionUserId } from "@/server/session";
 
 const userInclude = {
   roles: true,
@@ -32,9 +32,9 @@ export function toActor(user: CurrentUser): Actor {
 }
 
 export async function getCurrentUser() {
-  const session = await auth();
-  if (!session?.user?.id) return null;
-  const user = await loadUser(session.user.id);
+  const userId = readSessionUserId();
+  if (!userId) return null;
+  const user = await loadUser(userId);
   if (!user || user.deletedAt || user.status !== "ACTIVE") return null;
   const stale =
     !user.lastActiveAt || Date.now() - user.lastActiveAt.getTime() > 60 * 60 * 1000;
@@ -45,9 +45,9 @@ export async function getCurrentUser() {
 }
 
 export async function requireUser() {
-  const session = await auth();
-  if (session?.user?.id) {
-    const user = await loadUser(session.user.id);
+  const userId = readSessionUserId();
+  if (userId) {
+    const user = await loadUser(userId);
     if (user && !user.deletedAt && user.status === "ACTIVE") {
       const stale =
         !user.lastActiveAt || Date.now() - user.lastActiveAt.getTime() > 60 * 60 * 1000;

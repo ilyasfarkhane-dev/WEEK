@@ -1,7 +1,5 @@
-"use server";
-
 import { createHash, randomBytes } from "node:crypto";
-import { revalidatePath } from "next/cache";
+import { revalidatePath } from "@/server/noop";
 import type { AppRole } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { DEFAULT_CANVAS_FIELDS } from "@/lib/canvas";

@@ -1,7 +1,5 @@
-"use server";
-
-import { revalidatePath } from "next/cache";
-import { cookies } from "next/headers";
+import { revalidatePath } from "@/server/noop";
+import { setCookie } from "@/server/http-context";
 import { prisma } from "@/lib/db";
 import { onboardingSchema, profileSchema } from "@/lib/validators";
 import { requireActor } from "@/server/actor";
@@ -72,8 +70,7 @@ async function saveProfile(mode: "onboarding" | "profile", input: unknown) {
       skipDuplicates: true,
     });
   }
-  const jar = await cookies();
-  jar.set("gic-locale", data.preferredLanguage, {
+  setCookie("gic-locale", data.preferredLanguage, {
     httpOnly: true,
     sameSite: "lax",
     path: "/",

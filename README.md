@@ -16,7 +16,7 @@ npm run dev
 
 `npm run db:seed` rewrites `data/store.json` with the demonstration cohort. Set `AUTH_SECRET` in `.env` before signing in.
 
-Open http://localhost:3000.
+Open http://127.0.0.1:3000. The interface is a React application served by Vite. Records stay in `data/store.json`, and the API is the process started by `npm run dev`.
 
 ### Demonstration accounts
 

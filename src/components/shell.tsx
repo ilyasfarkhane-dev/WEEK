@@ -1,8 +1,8 @@
-"use client";
-
-import Link from "next/link";
-import { usePathname } from "next/navigation";
 import { useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
+import { logoutAction } from "@/client/actions";
+import { useRefreshSession } from "@/client/session";
+import { Link } from "@/components/link";
 import {
   Bell,
   CalendarDays,
@@ -17,7 +17,6 @@ import {
   Users,
   X,
 } from "lucide-react";
-import { logoutAction } from "@/server/actions/auth";
 import { cn } from "@/lib/utils";
 
 const links = [
@@ -47,7 +46,9 @@ export function AppShell({
   unread: number;
   showAdmin: boolean;
 }) {
-  const pathname = usePathname();
+  const pathname = useLocation().pathname;
+  const navigate = useNavigate();
+  const refresh = useRefreshSession();
   const [open, setOpen] = useState(false);
   const initials = name
     .split(" ")
@@ -123,11 +124,17 @@ export function AppShell({
           <div className="flex-1 overflow-y-auto">{nav}</div>
           <div className="mt-4 border-t border-line px-2 pt-4">
             {identity}
-            <form action={logoutAction} className="mt-3">
-              <button className="text-sm text-muted underline-offset-4 hover:text-navy hover:underline" type="submit">
-                Sign out
-              </button>
-            </form>
+            <button
+              className="mt-3 text-sm text-muted underline-offset-4 hover:text-navy hover:underline"
+              type="button"
+              onClick={async () => {
+                const result = await logoutAction();
+                await refresh();
+                navigate(result.ok && result.data?.redirect ? result.data.redirect : "/");
+              }}
+            >
+              Sign out
+            </button>
           </div>
         </aside>
         <div className="min-w-0 flex-1">
@@ -155,12 +162,20 @@ export function AppShell({
                   </button>
                 </div>
                 {nav}
-                <form action={logoutAction} className="mt-auto border-t border-line px-2 pt-4">
+                <div className="mt-auto border-t border-line px-2 pt-4">
                   {identity}
-                  <button className="mt-3 text-sm text-muted underline-offset-4 hover:text-navy hover:underline" type="submit">
+                  <button
+                    className="mt-3 text-sm text-muted underline-offset-4 hover:text-navy hover:underline"
+                    type="button"
+                    onClick={async () => {
+                      const result = await logoutAction();
+                      await refresh();
+                      navigate(result.ok && result.data?.redirect ? result.data.redirect : "/");
+                    }}
+                  >
                     Sign out
                   </button>
-                </form>
+                </div>
               </div>
             </div>
           ) : null}

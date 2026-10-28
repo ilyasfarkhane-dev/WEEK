@@ -1,6 +1,4 @@
-"use server";
-
-import { revalidatePath } from "next/cache";
+import { revalidatePath } from "@/server/noop";
 import type { Confidentiality, Prisma, Visibility } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { canvasHash } from "@/lib/canvas";

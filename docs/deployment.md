@@ -12,7 +12,7 @@ Application records live in `data/store.json` (or the path in `DATA_FILE`). Seed
 
 `docker-compose.yml` starts the app and keeps `data/store.json` on a volume. `AUTH_SECRET` in that file is a placeholder. Replace it before anyone else can reach the host.
 
-Build with the included `Dockerfile`. The image uses Next.js standalone output. The container command only starts the server. Copy a seeded `data/store.json` onto the volume before the first sign-in.
+Build with the included `Dockerfile`. The image builds the Vite client and starts the API with `tsx`. Copy a seeded `data/store.json` onto the volume before the first sign-in.
 
 ## Backups
 

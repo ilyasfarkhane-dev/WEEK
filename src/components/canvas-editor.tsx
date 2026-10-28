@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { saveCanvasAction } from "@/server/actions/collaboration";
+import { saveCanvasAction } from "@/client/actions";
 import { Textarea } from "@/components/ui/primitives";
 
 type Field = { key: string; label: string; helpText: string; required: boolean };

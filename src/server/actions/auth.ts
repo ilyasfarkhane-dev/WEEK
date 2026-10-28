@@ -1,11 +1,8 @@
-"use server";
-
 import { createHash, randomBytes } from "node:crypto";
-import { headers } from "next/headers";
-import { AuthError } from "next-auth";
 import bcrypt from "bcryptjs";
-import { signIn, signOut } from "@/auth";
 import { prisma } from "@/lib/db";
+import { clientIp } from "@/server/http-context";
+import { clearSession, setSessionUser } from "@/server/session";
 import { invitationAcceptSchema, loginSchema, resetPasswordSchema, resetRequestSchema } from "@/lib/validators";
 import { audit } from "@/server/audit";
 import { queueEmail } from "@/lib/email";
@@ -13,9 +10,7 @@ import { rateLimit } from "@/server/rate-limit";
 import { fail, ok } from "@/server/result";
 
 async function clientKey(prefix: string) {
-  const headerStore = await headers();
-  const ip = headerStore.get("x-forwarded-for")?.split(",")[0]?.trim() || "local";
-  return `${prefix}:${ip}`;
+  return `${prefix}:${clientIp()}`;
 }
 
 export async function loginAction(input: { email: string; password: string }) {
@@ -32,21 +27,13 @@ export async function loginAction(input: { email: string; password: string }) {
   if (!matches || !user || user.status !== "ACTIVE" || user.deletedAt) {
     return fail("The email or password is not correct, or the account is not active.");
   }
-  try {
-    await signIn("credentials", {
-      email,
-      password: parsed.data.password,
-      redirectTo: user.onboardingCompletedAt ? "/dashboard" : "/onboarding",
-    });
-  } catch (error) {
-    if (error instanceof AuthError) return fail("The email or password is not correct, or the account is not active.");
-    throw error;
-  }
-  return ok();
+  setSessionUser(user.id);
+  return ok(undefined, { redirect: user.onboardingCompletedAt ? "/dashboard" : "/onboarding" });
 }
 
 export async function logoutAction() {
-  await signOut({ redirectTo: "/" });
+  clearSession();
+  return ok(undefined, { redirect: "/" });
 }
 
 export async function acceptInvitationAction(input: { token: string; password: string; confirmPassword: string }) {
@@ -91,13 +78,8 @@ export async function acceptInvitationAction(input: { token: string; password: s
   }
   await prisma.invitation.update({ where: { id: invitation.id }, data: { acceptedAt: new Date() } });
   await audit(user.id, "invitation.accept", "User", user.id);
-  try {
-    await signIn("credentials", { email, password: parsed.data.password, redirectTo: "/onboarding" });
-  } catch (error) {
-    if (error instanceof AuthError) return fail("The account was created, but sign-in failed. Use the sign-in page.");
-    throw error;
-  }
-  return ok();
+  setSessionUser(user.id);
+  return ok(undefined, { redirect: "/onboarding" });
 }
 
 export async function requestPasswordResetAction(input: { email: string }) {

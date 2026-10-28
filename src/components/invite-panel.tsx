@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { inviteUserAction } from "@/server/actions/admin";
+import { inviteUserAction } from "@/client/actions";
 import { Button } from "@/components/ui/button";
 import { label } from "@/lib/labels";
 

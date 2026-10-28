@@ -3,10 +3,8 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useRouter } from "next/navigation";
-import { completeOnboardingAction, updateProfileAction } from "@/server/actions/profile";
-import { createChallengeAction, createProjectAction } from "@/server/actions/collaboration";
-import { createHelpRequestAction } from "@/server/actions/engagement";
+import { useNavigate } from "react-router-dom";
+import { completeOnboardingAction, createChallengeAction, createHelpRequestAction, createProjectAction, updateProfileAction } from "@/client/actions";
 import { challengeSchema, helpSchema, onboardingSchema, profileSchema, projectSchema } from "@/lib/validators";
 import { Button } from "@/components/ui/button";
 import { Input, Label, Select, Textarea } from "@/components/ui/primitives";
@@ -48,7 +46,7 @@ export function ProfileForm({
   tags: Option[];
   themes: Option[];
 }) {
-  const router = useRouter();
+  const router = useNavigate();
   const [message, setMessage] = useState<string | null>(null);
   const form = useForm({
     resolver: zodResolver(mode === "onboarding" ? onboardingSchema : profileSchema),
@@ -62,7 +60,7 @@ export function ProfileForm({
         setMessage(null);
         const result = mode === "onboarding" ? await completeOnboardingAction(values) : await updateProfileAction(values);
         if (!result.ok) setMessage(result.message);
-        else if (mode === "onboarding") router.push("/dashboard");
+        else if (mode === "onboarding") router("/dashboard");
         else setMessage(result.message ?? "Saved.");
       })}
     >
@@ -163,7 +161,7 @@ export function ProfileForm({
 }
 
 export function ChallengeForm({ institutions, countries, themes }: { institutions: Option[]; countries: Option[]; themes: Option[] }) {
-  const router = useRouter();
+  const router = useNavigate();
   const [message, setMessage] = useState<string | null>(null);
   const form = useForm({
     resolver: zodResolver(challengeSchema),
@@ -197,7 +195,7 @@ export function ChallengeForm({ institutions, countries, themes }: { institution
     <form className="space-y-4" noValidate onSubmit={form.handleSubmit(async (values) => {
       const result = await createChallengeAction(values);
       if (!result.ok) setMessage(result.message);
-      else if (result.data && "id" in result.data) router.push(`/challenges/${result.data.id}`);
+      else if (result.data && "id" in result.data) router(`/challenges/${result.data.id}`);
     })}>
       {message ? <Alert tone="danger">{message}</Alert> : null}
       {fields.map(([name, label, area]) => (
@@ -235,7 +233,7 @@ export function ChallengeForm({ institutions, countries, themes }: { institution
 }
 
 export function ProjectForm({ institutions, countries, themes, challenges, members }: { institutions: Option[]; countries: Option[]; themes: Option[]; challenges: Option[]; members: Option[] }) {
-  const router = useRouter();
+  const router = useNavigate();
   const [message, setMessage] = useState<string | null>(null);
   const form = useForm({
     resolver: zodResolver(projectSchema),
@@ -255,7 +253,7 @@ export function ProjectForm({ institutions, countries, themes, challenges, membe
     <form className="space-y-4" noValidate onSubmit={form.handleSubmit(async (values) => {
       const result = await createProjectAction({ ...values, challengeId: values.challengeId || undefined });
       if (!result.ok) setMessage(result.message);
-      else if (result.data && "id" in result.data) router.push(`/projects/${result.data.id}`);
+      else if (result.data && "id" in result.data) router(`/projects/${result.data.id}`);
     })}>
       {message ? <Alert tone="danger">{message}</Alert> : null}
       <div>
@@ -301,7 +299,7 @@ export function ProjectForm({ institutions, countries, themes, challenges, membe
 }
 
 export function HelpForm({ themes }: { themes: Option[] }) {
-  const router = useRouter();
+  const router = useNavigate();
   const [message, setMessage] = useState<string | null>(null);
   const form = useForm({
     resolver: zodResolver(helpSchema),
@@ -320,7 +318,7 @@ export function HelpForm({ themes }: { themes: Option[] }) {
     <form className="space-y-4" noValidate onSubmit={form.handleSubmit(async (values) => {
       const result = await createHelpRequestAction(values);
       if (!result.ok) setMessage(result.message);
-      else if (result.data && "id" in result.data) router.push(`/help-requests/${result.data.id}`);
+      else if (result.data && "id" in result.data) router(`/help-requests/${result.data.id}`);
     })}>
       {message ? <Alert tone="danger">{message}</Alert> : null}
       <div>

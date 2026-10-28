@@ -3,14 +3,17 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useRouter } from "next/navigation";
-import { loginAction, acceptInvitationAction, requestPasswordResetAction, resetPasswordAction } from "@/server/actions/auth";
+import { useNavigate } from "react-router-dom";
+import { useRefreshSession } from "@/client/session";
+import { acceptInvitationAction, loginAction, requestPasswordResetAction, resetPasswordAction } from "@/client/actions";
 import { invitationAcceptSchema, loginSchema, resetPasswordSchema, resetRequestSchema } from "@/lib/validators";
 import { Button } from "@/components/ui/button";
 import { Input, Label } from "@/components/ui/primitives";
 import { Alert } from "@/components/ui/primitives";
 
 export function LoginForm() {
+  const navigate = useNavigate();
+  const refresh = useRefreshSession();
   const [message, setMessage] = useState<string | null>(null);
   const form = useForm({ resolver: zodResolver(loginSchema), defaultValues: { email: "", password: "" } });
   return (
@@ -20,7 +23,11 @@ export function LoginForm() {
       onSubmit={form.handleSubmit(async (values) => {
         setMessage(null);
         const result = await loginAction(values);
-        if (result && !result.ok) setMessage(result.message);
+        if (!result.ok) setMessage(result.message);
+        else if (result.data?.redirect) {
+          await refresh();
+          navigate(result.data.redirect);
+        }
       })}
       noValidate
     >
@@ -41,6 +48,8 @@ export function LoginForm() {
 }
 
 export function InvitationForm({ token }: { token: string }) {
+  const navigate = useNavigate();
+  const refresh = useRefreshSession();
   const [message, setMessage] = useState<string | null>(null);
   const form = useForm({
     resolver: zodResolver(invitationAcceptSchema),
@@ -54,7 +63,11 @@ export function InvitationForm({ token }: { token: string }) {
       onSubmit={form.handleSubmit(async (values) => {
         setMessage(null);
         const result = await acceptInvitationAction(values);
-        if (result && !result.ok) setMessage(result.message);
+        if (!result.ok) setMessage(result.message);
+        else if (result.data?.redirect) {
+          await refresh();
+          navigate(result.data.redirect);
+        }
       })}
     >
       {message ? <Alert tone="danger">{message}</Alert> : null}
@@ -93,14 +106,14 @@ export function ResetRequestForm() {
 }
 
 export function ResetPasswordForm({ token }: { token: string }) {
-  const router = useRouter();
+  const router = useNavigate();
   const [message, setMessage] = useState<string | null>(null);
   const form = useForm({ resolver: zodResolver(resetPasswordSchema), defaultValues: { token, password: "", confirmPassword: "" } });
   return (
     <form className="space-y-4" method="post" noValidate onSubmit={form.handleSubmit(async (values) => {
       const result = await resetPasswordAction(values);
       if (!result.ok) setMessage(result.message);
-      else router.push("/login?reset=1");
+      else router("/login?reset=1");
     })}>
       {message ? <Alert tone="danger">{message}</Alert> : null}
       <input type="hidden" {...form.register("token")} />

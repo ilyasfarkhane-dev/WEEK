@@ -47,7 +47,7 @@ The directory never shows email. Private profiles are omitted from recommendatio
 | Token leakage in the outbox | Outbox is administrator-only | Administrators can read reset links. Do not expose the outbox in production without a retention limit |
 | Email or AI data leaving the institution | Both integrations are unwired | Turning them on requires a provider and a data-processing decision |
 | Backup loss | Documented, not automated | No managed backup is configured in this repository |
-| Content security policy | Not enforced | Next.js needs a nonce policy before a strict CSP is safe |
+| Content security policy | Not enforced | A strict policy needs a nonce or hash plan before it is turned on |
 
 ## Retention
 

@@ -344,6 +344,17 @@ function presentRow(store: Store, model: Model, row: Row, args?: { include?: Whe
   if (args?.include) {
     for (const [key, spec] of Object.entries(args.include)) {
       if (!spec) continue;
+      if (key === "_count" && spec && typeof spec === "object") {
+        const select = (spec as Where).select as Record<string, boolean> | undefined;
+        const counts: Record<string, number> = {};
+        for (const [name, enabled] of Object.entries(select ?? {})) {
+          if (!enabled) continue;
+          const relation = model.fields.get(name);
+          if (relation?.kind === "relation") counts[name] = relatedRows(store, model, row, relation).length;
+        }
+        output._count = counts;
+        continue;
+      }
       output[key] = presentRelation(store, model, row, key, spec);
     }
   }

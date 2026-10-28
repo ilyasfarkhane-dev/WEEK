@@ -1,8 +1,19 @@
-import { redirect } from "next/navigation";
-
 export type ActionResult<T = undefined> =
   | { ok: true; message?: string; data?: T }
   | { ok: false; message: string; conflict?: boolean };
+
+export class RedirectSignal extends Error {
+  location: string;
+
+  constructor(location: string) {
+    super("Redirect");
+    this.location = location;
+  }
+}
+
+export function redirect(location: string): never {
+  throw new RedirectSignal(location);
+}
 
 export function ok<T>(message?: string, data?: T): ActionResult<T> {
   return { ok: true, message, data };
